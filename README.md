@@ -11,3 +11,16 @@ The tools is started at the start of the build by the code that starts the MockS
 
 _This is the first time I have used git repository so please comment on the repo and the code if you feel the need :-)_
 
+## Config file
+```golang 
+Debug       bool    // default true: logs lots of things
+Port        int     // default is MinPort - 1
+MinPort     int     // default 8000: any port less than this is invalid
+MaxPort     int     // default 8999: any port more than this is invalid
+MinTimeout  int     // default 5:    any timeout less than this is invalid
+MaxTimeout  int     // default 300:  any timeout more than this is invalid
+Timeout     int64   // default 15:   time out at launch
+LogFileName string  // "" the name of a log file. If undefined logs to console
+``` 
+## Run
+mockServerDaemon configFileName
