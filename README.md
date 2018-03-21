@@ -5,11 +5,11 @@ This is a **micro** server that keeps track of multiple port numbers during a la
 
 It is not intended to be used 'out of the box' but may serve as an example of how to develop a micro server.
 
-The issue for me was that MockServer which we use to mock downstream systems hoggs the port. This only an issue parallel testing. If two tests run simultainously the request the same port. This causes MockServer to fail with a bind error.
+The issue for me was that MockServer which we use to mock downstream systems hoggs the port. This only an issue parallel testing. If two tests run simultainously they can request the same port. This causes MockServer to fail with a bind error.
 
-This tool does not allocate ports, it is used to cause the build to fail if the same port is used twice.
+This tool does not allocate ports, it is used to cause the build to fail if the same port is used twice. It also returns an unused port in the response.
 
-The tools is started as a daemon service at the start of the build by the code that allocates ports to the MockServer and times out after n seconds of inactivity.
+The tools is started as a daemon service at the start of the build by the Java code that allocates ports to the MockServer and times out after n seconds of inactivity.
 
 _This is the first time I have used git repository so please comment on the repo and the code if you feel the need :-)_
 
