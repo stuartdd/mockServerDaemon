@@ -60,13 +60,15 @@ func (p *Config) toString() string {
 }
 
 func main() {
+	var configFileName string
 
-	if len(os.Args) == 1 {
-		fmt.Println("The configdata file name is required")
-		os.Exit(1)
+	if len(os.Args) > 1 {
+		configFileName = os.Args[1]
+	} else {
+		configFileName = "mockServerDaemon.json"
 	}
 
-	config, err := Load(os.Args[1])
+	config, err := Load(configFileName)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
