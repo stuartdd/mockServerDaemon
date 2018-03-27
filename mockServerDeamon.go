@@ -43,6 +43,10 @@ var configData *Config
 var criticalMutex sync.Mutex
 var logFile *os.File
 
+/*
+Date read from the JSON configuration file. Note any undefined values are defaulted
+to constants defined in  this program
+*/
 type Config struct {
 	Debug       bool
 	Port        int
@@ -55,11 +59,17 @@ type Config struct {
 	ConfigName  string
 }
 
+/*
+To string the configuration data. Used to record it in the logs
+*/
 func (p *Config) toString() string {
 	return fmt.Sprintf(CONFIG_DATA, p.Port, p.MinPort, p.MaxPort, p.MinTimeout, p.MaxTimeout, p.Timeout, p.LogFileName)
 }
 
 func main() {
+	/*
+		Read the configuration file. If no name is given use the default name.
+	*/
 	var configFileName string
 
 	if len(os.Args) > 1 {
@@ -73,28 +83,48 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	configData = config
-
-	createLog()
-	defer closeLog()
-
-	serverName, _ = os.Executable()
-
-	log.Printf("Server will start on port %d\n", config.Port)
-	log.Printf("To stop the server http://localhost:%d/stop\n", config.Port)
-
-	if configData == nil {
+	if config == nil {
 		log.Println("Config file is null!")
 		os.Exit(1)
 	}
+
+	configData = config
+
+	/*
+		Open the logs. Log name is in the congig data. If not defined default to sysout
+	*/
+	createLog()
+	defer closeLog()
+
+	/*
+		Get the name of this executable. It is returned in the http header.
+	*/
+	serverName, _ = os.Executable()
+
+	/*
+	   Say hello.
+	*/
+	log.Printf("Server will start on port %d\n", config.Port)
+	log.Printf("To stop the server http://localhost:%d/stop\n", config.Port)
+
 	if configData.Debug {
 		log.Println(configData.toString())
 	}
 
-	setTimeoutSeconds(config.Timeout)
+	/*
+	   Clear and init the port map
+	*/
 	protectedPortMapCode(&criticalMutex, "", PM_CLEAR)
+
+	/*
+	   Set the time out for the server. If no activity then the server closes
+	*/
+	setTimeoutSeconds(config.Timeout)
 	go doTimeout()
 
+	/*
+	   Map http requests to functions
+	*/
 	http.HandleFunc("/test/", testHandler)
 	http.HandleFunc("/reset", resetHandler)
 	http.HandleFunc("/stop", stopHandler)
@@ -102,7 +132,9 @@ func main() {
 	http.HandleFunc("/ping", pingHandler)
 	http.HandleFunc("/list", listHandler)
 	http.HandleFunc("/timeout/", timeoutHandler)
-
+	/*
+	   Start the server.
+	*/
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(config.Port), nil))
 }
 
@@ -111,6 +143,8 @@ func main() {
 	The Mutex prevents multiple threads running the code.
 
 	The defer ensures that the lock is always lifted when the method exits.
+
+	This will be updated with go 1.9 to use a concurrent map.
 */
 func protectedPortMapCode(m *sync.Mutex, portToTest string, action pmAction) (string, bool) {
 	m.Lock()
