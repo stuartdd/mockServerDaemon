@@ -11,6 +11,10 @@ This tool does not allocate ports, it is used to cause the build to fail if the 
 
 The tools is started as a daemon service at the start of the build by the Java code that allocates ports to the MockServer and times out after n seconds of inactivity.
 
+Added ```func RunWithConfig(config *Config)``` to allow server to be started from another program. This is currently how the tests start the server. It means that the tests do not need the server running and that the configuration can be controlled for the test run. 
+
+Tests now use TestMain() to start the server before running the tests. The tests now run to end.
+
 _This is the first time I have used git repository so please comment on the repo and the code if you feel the need :-)_
 
 I did find it confusing to set up this project especially as I wanted it to reflect the standard structure of a go project in the repository. I wanted to be able to clone into a standard go directory structure and at the moment I cannot do that without a bit of, post clone, fidling of go environment variables. Any hints would be welcome. 
@@ -26,7 +30,19 @@ MaxTimeout  int     // default 300:  any timeout more than this is invalid
 Timeout     int64   // default 15:   time out at launch
 LogFileName string  // "" the name of a log file. If undefined logs to console
 ``` 
-## Run
-mockServerDaemon configFileName
+## Test
+In src/github.com/stuartdd/mockServerDaemon
+```go test```
+
+## Run Linux
+```./mockServerDaemon configFileName```
+
+## Run Windows
+```mockServerDaemon.exe configFileName```
+
+## Config file
+The configFileName is optional.
+If configFileName is not given the server will look for 'mockServerConfig.json' in the current path.
+If configFileName is given without a suffix of '.json' the suffix will be added.
 
 ## API is ReST like. To be detailed later.
