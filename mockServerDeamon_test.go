@@ -40,9 +40,15 @@ func TestMain(m *testing.M) {
 
 	resp, err := http.Get("http://localhost:7999/stop")
 	if err != nil {
+		fmt.Printf("Failed closing the server: %s", err.Error())
 		os.Exit(1)
 	}
-	fmt.Println(resp.Body)
+	respString, err := readResponseStream(resp)
+	if err != nil {
+		fmt.Printf("Failed closing the server: %s", err.Error())
+		os.Exit(1)
+	}
+	fmt.Println(respString)
 	os.Exit(ret)
 }
 
@@ -141,13 +147,22 @@ func get(t *testing.T, action string) string {
 		t.Logf("Please start the server: Could send get request '%s', Error:%s", action, err.Error())
 		t.FailNow()
 	}
+	respString, err := readResponseStream(resp)
+	if err != nil {
+		t.Logf("Could Read the response stream Error:%s", err.Error())
+		t.FailNow()
+	}
+	return respString
+}
+
+func readResponseStream(resp *http.Response) (string, error) {
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		t.Log("Could not read resp body")
-		t.FailNow()
+		return "", err
 	}
-	return string(body)
+	return string(body), nil
+
 }
 
 func getTestPort(t *testing.T, action string) *TestResp {
