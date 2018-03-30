@@ -46,7 +46,16 @@ The configFileName is optional.
 If configFileName is not given the server will look for 'mockServerConfig.json' in the current path.
 If configFileName is given without a suffix of '.json' the suffix will be added.
 
-## API is ReST like. To be detailed later.
+## API is ReST like.
+### Stop the server
+```/stop```
+
+The response will be:
+
+```{"action":"STOP", "state":"OK", "note":"", "timeout":197, "inuse":1}```
+
+The server will terminate about a second later!
+
 ### Test a port
 ```/test/<port>```
 
@@ -124,9 +133,9 @@ Response if the timeout value is valid and accepted:
 
 ```{"action":"TIMEOUT", "state":"valid", "note":"", "timeout":<seconds>, "inuse":2}```
 
-Note that **seconds** should be the time set but an edge case can result in the value -1.
+Note that **seconds** should be the time set but an edge case can result in the value being decremented.
 
-Response if the timeout value outside the range set in the configuration file:
+Response if the timeout value is outside the range set in the configuration file:
 
 ```{"action":"TIMEOUT", "state":"range", "note":"< 5 or > 300", "timeout":<seconds>, "inuse":2}```
 
