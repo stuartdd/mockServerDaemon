@@ -32,6 +32,7 @@ LogFileName string  // "" the name of a log file. If undefined logs to console
 ``` 
 ## Test
 In src/github.com/stuartdd/mockServerDaemon
+
 ```go test```
 
 ## Run Linux
@@ -46,3 +47,61 @@ If configFileName is not given the server will look for 'mockServerConfig.json' 
 If configFileName is given without a suffix of '.json' the suffix will be added.
 
 ## API is ReST like. To be detailed later.
+### Test a port
+```/test/<port>```
+
+Note the timeout will be reset by this Action.
+Example ```http://server:7999/test/8500```
+  
+If the port is already in use the response will be:
+  
+```{"test":"<port>", "state":"fail", "note":"Port is in use", "free":"<freeport>"}```
+
+Note **freeport** is a port that can be used and is currently free.
+
+If it is NOT already in use the response will be:
+
+```{"test":"<port>", "state":"pass", "note":"Can be used", "free":"<port>"}```
+
+### Get server status
+```/status```
+
+Note the **timeout** will be reset by this Action.
+
+Example ```http://server:7999/status```
+
+Response:
+
+```{"action":"STATUS", "state":"OK", "note":"", "timeout":300, "inuse":2}```
+
+Note that **timeout** is reset to the value defined in the configuration file.
+The **inuse** value is the current number of ports that have been tested plus the port the server is using.
+
+### Reset the server
+```/reset```
+
+Note the **timeout** will be reset by this Action.
+
+Example ```http://server:7999/reset```
+
+Response:
+
+```{"action":"RESET", "state":"OK", "note":"", "timeout":300, "inuse":1}```
+
+Note that **timeout** is reset to the value defined in the configuration file.
+The **inuse** value will always be 1 as the port the server is using is included in the list.
+
+### Ping the server
+```/ping```
+
+Note the timeout will **NOT** be reset by this Action.
+
+Example ```http://server:7999/ping```
+
+Response:
+
+```{"action":"PING", "state":"OK", "note":"", "timeout":150, "inuse":6}```
+
+Note that **timeout** is the remaining time the server will run if no other activity is detected.
+The **inuse** value is the current number of ports that have been tested plus the port the server is using.
+
