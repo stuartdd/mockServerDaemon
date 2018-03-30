@@ -31,7 +31,7 @@ const PORT_MIN = 8000
 const PORT_MAX = 8999
 const TIMEOUT_MIN = 5
 const TIMEOUT_MAX = 300
-const TIMEOUT_DEFAULT = 15
+const TIMEOUT_DEFAULT = 20
 const FLAG = "F"
 
 var portmap map[string]string
@@ -74,11 +74,15 @@ func main() {
 
 	if len(os.Args) > 1 {
 		configFileName = os.Args[1]
+		if !strings.HasSuffix(strings.ToLower(configFileName), ".json") {
+			configFileName = configFileName + ".json"
+		}
 	} else {
 		configFileName = "mockServerDaemon.json"
 	}
 
 	config, err := Load(configFileName)
+
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -87,6 +91,11 @@ func main() {
 		log.Println("Config file is null!")
 		os.Exit(1)
 	}
+
+	RunWithConfig(config)
+}
+
+func RunWithConfig(config *Config) {
 
 	configData = config
 
@@ -209,7 +218,7 @@ func resetHandler(w http.ResponseWriter, r *http.Request) {
 	protectedPortMapCode(&criticalMutex, "", PM_CLEAR)
 	resetTimeout()
 	setHeaders(w)
-	fmt.Fprintf(w, respondAction("STATUS", "OK", "", r.URL.Path))
+	fmt.Fprintf(w, respondAction("RESET", "OK", "", r.URL.Path))
 }
 
 func statusHandler(w http.ResponseWriter, r *http.Request) {
