@@ -63,6 +63,14 @@ If it is NOT already in use the response will be:
 
 ```{"test":"<port>", "state":"pass", "note":"Can be used", "free":"<port>"}```
 
+If the port is outside the range defined in the configuration file the following response is returned:
+
+```{"test":"<port>", "state":"range", "note":"< 8000 or > 9000", "free":"0000"}```
+
+If the port is an invalid integer the following response is returned:
+
+```{"test":"<port>", "state":"format", "note":"invalid integer format", "free":"0000"}```
+
 ### Get server status
 ```/status```
 
@@ -105,3 +113,27 @@ Response:
 Note that **timeout** is the remaining time the server will run if no other activity is detected.
 The **inuse** value is the current number of ports that have been tested plus the port the server is using.
 
+### Set the server timeout
+```/timeout/<seconds>```
+
+Note the timeout is in seconds.
+
+Example ```http://server:7999/timeout/300```
+
+Response if the timeout value is valid and accepted:
+
+```{"action":"TIMEOUT", "state":"valid", "note":"", "timeout":<seconds>, "inuse":2}```
+
+Note that **seconds** should be the time set but an edge case can result in the value -1.
+
+Response if the timeout value outside the range set in the configuration file:
+
+```{"action":"TIMEOUT", "state":"range", "note":"< 5 or > 300", "timeout":<seconds>, "inuse":2}```
+
+Note that **seconds** will be the original timeout value.
+
+Response if the timeout value is not a valid integer:
+
+```{"action":"TIMEOUT", "state":"format", "note":"invalid integer format", "timeout":300, "inuse":2}```
+
+Note that **seconds** will be the original timeout value.
