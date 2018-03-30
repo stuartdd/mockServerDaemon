@@ -197,7 +197,7 @@ func testHandler(w http.ResponseWriter, r *http.Request) {
 	testPort := pathElements[2]
 	valid, note, _ := portInvalid(testPort)
 	if valid != "" {
-		fmt.Fprintf(w, respondTest(testPort, "invalid", note, "0000", r.URL.Path))
+		fmt.Fprintf(w, respondTest(testPort, valid, note, "0000", r.URL.Path))
 	} else {
 		unUsedPort, isUnUsed := protectedPortMapCode(&criticalMutex, testPort, PM_READ_UPDATE)
 		if isUnUsed {
@@ -247,7 +247,7 @@ func timeoutHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, respondAction("TIMEOUT", valid, note, r.URL.Path))
 	} else {
 		setTimeoutSeconds(timeout)
-		fmt.Fprintf(w, respondAction("TIMEOUT", "OK", "", r.URL.Path))
+		fmt.Fprintf(w, respondAction("TIMEOUT", "valid", "", r.URL.Path))
 	}
 }
 

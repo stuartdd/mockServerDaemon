@@ -3,6 +3,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -35,7 +36,14 @@ func TestMain(m *testing.M) {
 		MinTimeout: 5,
 		MaxTimeout: 300})
 
-	os.Exit(m.Run())
+	ret := m.Run()
+
+	resp, err := http.Get("http://localhost:7999/stop")
+	if err != nil {
+		os.Exit(1)
+	}
+	fmt.Println(resp.Body)
+	os.Exit(ret)
 }
 
 func TestPorts(t *testing.T) {
@@ -62,6 +70,30 @@ func TestPorts(t *testing.T) {
 
 }
 
+func TestPortBoundaries(t *testing.T) {
+	testResp := getTestPort(t, "test/7999")
+	assertEquals(t, testResp.State, "range")
+	assertEquals(t, testResp.Note, "< 8000 or > 9000")
+	testResp = getTestPort(t, "test/9001")
+	assertEquals(t, testResp.State, "range")
+	assertEquals(t, testResp.Note, "< 8000 or > 9000")
+	testResp = getTestPort(t, "test/abc")
+	assertEquals(t, testResp.State, "format")
+	assertEquals(t, testResp.Note, "invalid integer format")
+	testResp = getTestPort(t, "timeout/abc")
+	assertEquals(t, testResp.State, "format")
+	assertEquals(t, testResp.Note, "invalid integer format")
+	testResp = getTestPort(t, "timeout/3")
+	assertEquals(t, testResp.State, "range")
+	assertEquals(t, testResp.Note, "< 5 or > 300")
+	testResp = getTestPort(t, "timeout/301")
+	assertEquals(t, testResp.State, "range")
+	assertEquals(t, testResp.Note, "< 5 or > 300")
+	testResp = getTestPort(t, "timeout/100")
+	assertEquals(t, testResp.State, "valid")
+	assertEquals(t, testResp.Note, "")
+
+}
 func TestStatus(t *testing.T) {
 	resp := get(t, "status")
 	assertContains(t, resp, "{\"action\":\"STATUS\", \"state\":\"OK\", \"note\":\"\", \"timeout\":")
@@ -75,12 +107,12 @@ func TestStatus(t *testing.T) {
 	resp = get(t, "timeout/999")
 	assertContains(t, resp, "{\"action\":\"TIMEOUT\", \"state\":\"range\", \"note\":")
 	resp = get(t, "timeout/200")
-	assertContains(t, resp, "{\"action\":\"TIMEOUT\", \"state\":\"OK\", \"note\":\"\", \"timeout\":")
+	assertContains(t, resp, "{\"action\":\"TIMEOUT\", \"state\":\"valid\", \"note\":\"\", \"timeout\":")
 
 	resp = get(t, "test/80")
-	assertContains(t, resp, "{\"test\":\"80\", \"state\":\"invalid\", \"note\":")
+	assertContains(t, resp, "{\"test\":\"80\", \"state\":\"range\", \"note\":")
 	resp = get(t, "test/999999")
-	assertContains(t, resp, "{\"test\":\"999999\", \"state\":\"invalid\", \"note\":")
+	assertContains(t, resp, "{\"test\":\"999999\", \"state\":\"range\", \"note\":")
 
 	actionResp := getAction(t, "timeout/200")
 
