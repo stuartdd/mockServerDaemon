@@ -19,7 +19,7 @@ _This is the first time I have used git repository so please comment on the repo
 
 I did find it confusing to set up this project especially as I wanted it to reflect the standard structure of a go project in the repository. I wanted to be able to clone into a standard go directory structure and at the moment I cannot do that without a bit of, post clone, fidling of go environment variables. Any hints would be welcome. 
 
-## Config file dependency
+## Build - Dependencies
 use:
 
 ```go get github.com/stuartdd/tools_jsonconfig```
