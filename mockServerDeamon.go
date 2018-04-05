@@ -1,11 +1,8 @@
-// deamon.go
 package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +10,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/stuartdd/tools_jsonconfig"
 )
 
 type pmAction int
@@ -81,18 +80,27 @@ func main() {
 		configFileName = "mockServerDaemon.json"
 	}
 
-	config, err := Load(configFileName)
+	/*
+		Create a config object with the default values
+	*/
+	configData := Config{
+		Timeout:    TIMEOUT_DEFAULT,
+		MaxPort:    PORT_MAX,
+		MinPort:    PORT_MIN,
+		Port:       (PORT_MIN - 1),
+		MaxTimeout: TIMEOUT_MAX,
+		MinTimeout: TIMEOUT_MIN}
 
+	/*
+		load the config object
+	*/
+	err := jsonconfig.LoadJson(configFileName, &configData)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	if config == nil {
-		log.Println("Config file is null!")
-		os.Exit(1)
-	}
 
-	RunWithConfig(config)
+	RunWithConfig(&configData)
 }
 
 func RunWithConfig(config *Config) {
@@ -113,8 +121,8 @@ func RunWithConfig(config *Config) {
 	/*
 	   Say hello.
 	*/
-	log.Printf("Server will start on port %d\n", config.Port)
-	log.Printf("To stop the server http://localhost:%d/stop\n", config.Port)
+	log.Printf("Server will start on port %d\n", configData.Port)
+	log.Printf("To stop the server http://localhost:%d/stop\n", configData.Port)
 
 	if configData.Debug {
 		log.Println(configData.toString())
@@ -128,7 +136,7 @@ func RunWithConfig(config *Config) {
 	/*
 	   Set the time out for the server. If no activity then the server closes
 	*/
-	setTimeoutSeconds(config.Timeout)
+	setTimeoutSeconds(configData.Timeout)
 	go doTimeout()
 
 	/*
@@ -144,7 +152,7 @@ func RunWithConfig(config *Config) {
 	/*
 	   Start the server.
 	*/
-	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(config.Port), nil))
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(configData.Port), nil))
 }
 
 /*
@@ -348,33 +356,4 @@ func portInvalid(p string) (string, string, int) {
 		return "range", "< " + strconv.Itoa(configData.MinPort) + " or > " + strconv.Itoa(configData.MaxPort), port
 	}
 	return "", "", port
-}
-
-func Load(fileName string) (*Config, error) {
-	config := Config{
-		Timeout:    TIMEOUT_DEFAULT,
-		MaxPort:    PORT_MAX,
-		MinPort:    PORT_MIN,
-		Port:       (PORT_MIN - 1),
-		MaxTimeout: TIMEOUT_MAX,
-		MinTimeout: TIMEOUT_MIN}
-
-	b, err := LoadFile(fileName)
-	if err != nil {
-		return nil, err
-	}
-	err = json.Unmarshal(b, &config)
-	if err != nil {
-		return nil, err
-	}
-	config.ConfigName = fileName
-	return &config, nil
-}
-
-func LoadFile(fileName string) ([]byte, error) {
-	raw, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to Load config data [%s]", fileName)
-	}
-	return raw, nil
 }
