@@ -19,8 +19,15 @@ _This is the first time I have used git repository so please comment on the repo
 
 I did find it confusing to set up this project especially as I wanted it to reflect the standard structure of a go project in the repository. I wanted to be able to clone into a standard go directory structure and at the moment I cannot do that without a bit of, post clone, fidling of go environment variables. Any hints would be welcome. 
 
-## Config file
-```golang 
+## Config file dependency
+use:
+
+```go get github.com/stuartdd/tools_jsonconfig```
+
+to fetch the dependency from github.
+
+## Config file structure
+```
 Debug       bool    // default true: logs lots of things
 Port        int     // default is MinPort - 1
 MinPort     int     // default 8000: any port less than this is invalid
@@ -30,6 +37,14 @@ MaxTimeout  int     // default 300:  any timeout more than this is invalid
 Timeout     int64   // default 15:   time out at launch
 LogFileName string  // "" the name of a log file. If undefined logs to console
 ``` 
+## Config file example
+{"debug":true, "logFileName","ms.log", "port":8080}
+
+Note - That the names are NOT case sensitive. The JSON UnMarshaling just tries it's best to match the names.
+If the names do not match the resultant value will remain unchanged (the default values shown above).
+
+If debug is true the contents of the configuration data will be output to the console or log.
+
 ## Test
 In src/github.com/stuartdd/mockServerDaemon
 
