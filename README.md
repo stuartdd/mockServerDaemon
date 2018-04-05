@@ -47,6 +47,8 @@ If configFileName is not given the server will look for 'mockServerConfig.json' 
 If configFileName is given without a suffix of '.json' the suffix will be added.
 
 ## API is ReST like.
+Note ALL server requests are http GET methods.
+
 ### Stop the server
 ```/stop```
 
