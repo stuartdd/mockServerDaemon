@@ -20,6 +20,7 @@ const (
 	PM_READ_UPDATE pmAction = iota
 	PM_CLEAR
 	PM_LIST
+	PM_FREE
 )
 
 const RESP_TEST = "{\"test\":\"%s\", \"state\":\"%s\", \"note\":\"%s\", \"free\":\"%s\"}"
@@ -123,7 +124,7 @@ func RunWithConfig(config *Config) {
 	*/
 	log.Printf("Server will start on port %d\n", configData.Port)
 	log.Printf("To stop the server http://localhost:%d/stop\n", configData.Port)
-
+	log.Print("Actions:\nstop - Stop the server\nstatus - Return server status\ntest/{port} - Test a port\nlist - Show used port list\nreset - Clear all ports")
 	if configData.Debug {
 		log.Println(configData.toString())
 	}
@@ -168,6 +169,13 @@ func protectedPortMapCode(m *sync.Mutex, portToTest string, action pmAction) (st
 	defer m.Unlock()
 
 	switch action {
+	case PM_FREE:
+		for j := configData.MinPort; j <= configData.MaxPort; j++ {
+			testport := strconv.Itoa(j)
+			if portmap[testport] == "" {
+				return testport, true
+			}
+		}
 	case PM_LIST:
 		var buffer bytes.Buffer
 		for k, _ := range portmap {
@@ -205,7 +213,8 @@ func testHandler(w http.ResponseWriter, r *http.Request) {
 	testPort := pathElements[2]
 	valid, note, _ := portInvalid(testPort)
 	if valid != "" {
-		fmt.Fprintf(w, respondTest(testPort, valid, note, "0000", r.URL.Path))
+		free, _ := protectedPortMapCode(&criticalMutex, "", PM_FREE)
+		fmt.Fprintf(w, respondTest(testPort, valid, note, free, r.URL.Path))
 	} else {
 		unUsedPort, isUnUsed := protectedPortMapCode(&criticalMutex, testPort, PM_READ_UPDATE)
 		if isUnUsed {
@@ -296,7 +305,7 @@ func respondTest(testport string, state string, note string, text string, path s
 
 func respondList(path string) string {
 	l, _ := protectedPortMapCode(&criticalMutex, "", PM_LIST)
-	s := fmt.Sprintf(RESP_LIST, l, getSecondsRemaining())
+	s := fmt.Sprintf(RESP_LIST, l, len(portmap))
 	log.Printf("REQ{\"url\":\"%s\"} RES%s", path, s)
 	return s
 }
