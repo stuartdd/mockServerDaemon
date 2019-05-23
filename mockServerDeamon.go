@@ -180,7 +180,7 @@ func protectedPortMapCode(m *sync.Mutex, portToTest string, action pmAction) (st
 		}
 	case pmListConst:
 		var buffer bytes.Buffer
-		for k, _ := range portmap {
+		for k := range portmap {
 			buffer.WriteString(k)
 			buffer.WriteString(",")
 		}
