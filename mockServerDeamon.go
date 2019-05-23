@@ -11,28 +11,28 @@ import (
 	"sync"
 	"time"
 
-	"github.com/stuartdd/tools_jsonconfig"
+	jsonconfig "github.com/stuartdd/tools_jsonconfig"
 )
 
 type pmAction int
 
 const (
-	PM_READ_UPDATE pmAction = iota
-	PM_CLEAR
-	PM_LIST
-	PM_FREE
+	pmReadUpdateConst pmAction = iota
+	pmClearConst
+	pmListConst
+	pmFreeConst
 )
 
-const RESP_TEST = "{\"test\":\"%s\", \"state\":\"%s\", \"note\":\"%s\", \"free\":\"%s\"}"
-const RESP_ACTION = "{\"action\":\"%s\", \"state\":\"%s\", \"note\":\"%s\", \"timeout\":%d, \"inuse\":%d}"
-const RESP_LIST = "{\"action\":\"list\", \"state\":\"ok\", \"ports\":\"%s\", \"inuse\":%d}"
-const CONFIG_DATA = "CFG{\"port\":%d, \"minPort\":%d, \"maxPort\":%d, \"minTimeout\":%d, \"maxTimeout\":%d, \"timeout\":%d, \"logfilename\":\"%s\"}"
-const PORT_MIN = 8000
-const PORT_MAX = 8999
-const TIMEOUT_MIN = 5
-const TIMEOUT_MAX = 300
-const TIMEOUT_DEFAULT = 20
-const FLAG = "F"
+const respTestConst = "{\"test\":\"%s\", \"state\":\"%s\", \"note\":\"%s\", \"free\":\"%s\"}"
+const respActionConst = "{\"action\":\"%s\", \"state\":\"%s\", \"note\":\"%s\", \"timeout\":%d, \"inuse\":%d}"
+const respListConst = "{\"action\":\"list\", \"state\":\"ok\", \"ports\":\"%s\", \"inuse\":%d}"
+const defaultConfigConst = "CFG{\"port\":%d, \"minPort\":%d, \"maxPort\":%d, \"minTimeout\":%d, \"maxTimeout\":%d, \"timeout\":%d, \"logfilename\":\"%s\"}"
+const portMin = 8000
+const portMax = 8999
+const timeOutMinConst = 5
+const timeOutMaxConst = 300
+const tomeoutDefaultConst = 20
+const flagConst = "F"
 
 var portmap map[string]string
 var stopAtSeconds int64 = 0
@@ -63,7 +63,7 @@ type Config struct {
 To string the configuration data. Used to record it in the logs
 */
 func (p *Config) toString() string {
-	return fmt.Sprintf(CONFIG_DATA, p.Port, p.MinPort, p.MaxPort, p.MinTimeout, p.MaxTimeout, p.Timeout, p.LogFileName)
+	return fmt.Sprintf(defaultConfigConst, p.Port, p.MinPort, p.MaxPort, p.MinTimeout, p.MaxTimeout, p.Timeout, p.LogFileName)
 }
 
 func main() {
@@ -85,12 +85,12 @@ func main() {
 		Create a config object with the default values
 	*/
 	configData := Config{
-		Timeout:    TIMEOUT_DEFAULT,
-		MaxPort:    PORT_MAX,
-		MinPort:    PORT_MIN,
-		Port:       (PORT_MIN - 1),
-		MaxTimeout: TIMEOUT_MAX,
-		MinTimeout: TIMEOUT_MIN}
+		Timeout:    tomeoutDefaultConst,
+		MaxPort:    portMax,
+		MinPort:    portMin,
+		Port:       (portMin - 1),
+		MaxTimeout: timeOutMaxConst,
+		MinTimeout: timeOutMinConst}
 
 	/*
 		load the config object
@@ -104,6 +104,8 @@ func main() {
 	RunWithConfig(&configData)
 }
 
+// RunWithConfig - runs with a specific configuration object
+//	Param - config a ref to the config object
 func RunWithConfig(config *Config) {
 
 	configData = config
@@ -132,7 +134,7 @@ func RunWithConfig(config *Config) {
 	/*
 	   Clear and init the port map
 	*/
-	protectedPortMapCode(&criticalMutex, "", PM_CLEAR)
+	protectedPortMapCode(&criticalMutex, "", pmClearConst)
 
 	/*
 	   Set the time out for the server. If no activity then the server closes
@@ -169,24 +171,24 @@ func protectedPortMapCode(m *sync.Mutex, portToTest string, action pmAction) (st
 	defer m.Unlock()
 
 	switch action {
-	case PM_FREE:
+	case pmFreeConst:
 		for j := configData.MinPort; j <= configData.MaxPort; j++ {
 			testport := strconv.Itoa(j)
 			if portmap[testport] == "" {
 				return testport, true
 			}
 		}
-	case PM_LIST:
+	case pmListConst:
 		var buffer bytes.Buffer
 		for k, _ := range portmap {
 			buffer.WriteString(k)
 			buffer.WriteString(",")
 		}
 		return strings.Trim(buffer.String(), ","), false
-	case PM_READ_UPDATE:
+	case pmReadUpdateConst:
 		flag := portmap[portToTest]
 		if flag == "" {
-			portmap[portToTest] = FLAG
+			portmap[portToTest] = flagConst
 			return "", true
 		}
 		for j := configData.MinPort; j <= configData.MaxPort; j++ {
@@ -196,7 +198,7 @@ func protectedPortMapCode(m *sync.Mutex, portToTest string, action pmAction) (st
 			}
 		}
 		return "NONE", false
-	case PM_CLEAR:
+	case pmClearConst:
 		portmap = make(map[string]string)
 		portmap[strconv.Itoa(configData.Port)] = strconv.Itoa(configData.Port)
 	}
@@ -213,10 +215,10 @@ func testHandler(w http.ResponseWriter, r *http.Request) {
 	testPort := pathElements[2]
 	valid, note, _ := portInvalid(testPort)
 	if valid != "" {
-		free, _ := protectedPortMapCode(&criticalMutex, "", PM_FREE)
+		free, _ := protectedPortMapCode(&criticalMutex, "", pmFreeConst)
 		fmt.Fprintf(w, respondTest(testPort, valid, note, free, r.URL.Path))
 	} else {
-		unUsedPort, isUnUsed := protectedPortMapCode(&criticalMutex, testPort, PM_READ_UPDATE)
+		unUsedPort, isUnUsed := protectedPortMapCode(&criticalMutex, testPort, pmReadUpdateConst)
 		if isUnUsed {
 			fmt.Fprintf(w, respondTest(testPort, "pass", "Can be used", testPort, r.URL.Path))
 		} else {
@@ -232,7 +234,7 @@ func stopHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func resetHandler(w http.ResponseWriter, r *http.Request) {
-	protectedPortMapCode(&criticalMutex, "", PM_CLEAR)
+	protectedPortMapCode(&criticalMutex, "", pmClearConst)
 	resetTimeout()
 	setHeaders(w)
 	fmt.Fprintf(w, respondAction("RESET", "OK", "", r.URL.Path))
@@ -292,20 +294,20 @@ func closeLog() {
 }
 
 func respondAction(name string, ok string, note string, path string) string {
-	s := fmt.Sprintf(RESP_ACTION, name, ok, note, getSecondsRemaining(), len(portmap))
+	s := fmt.Sprintf(respActionConst, name, ok, note, getSecondsRemaining(), len(portmap))
 	log.Printf("REQ{\"url\":\"%s\"} RES%s", path, s)
 	return s
 }
 
 func respondTest(testport string, state string, note string, text string, path string) string {
-	s := fmt.Sprintf(RESP_TEST, testport, state, note, text)
+	s := fmt.Sprintf(respTestConst, testport, state, note, text)
 	log.Printf("REQ{\"url\":\"%s\"} RES%s", path, s)
 	return s
 }
 
 func respondList(path string) string {
-	l, _ := protectedPortMapCode(&criticalMutex, "", PM_LIST)
-	s := fmt.Sprintf(RESP_LIST, l, len(portmap))
+	l, _ := protectedPortMapCode(&criticalMutex, "", pmListConst)
+	s := fmt.Sprintf(respListConst, l, len(portmap))
 	log.Printf("REQ{\"url\":\"%s\"} RES%s", path, s)
 	return s
 }
